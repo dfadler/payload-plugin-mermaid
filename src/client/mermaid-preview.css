@@ -1,0 +1,86 @@
+/* Styling for the admin-editor live preview of a Mermaid block (see
+   MermaidPreview.tsx). The field label tracks the Payload admin theme via
+   its --theme-elevation-* custom properties, but the preview *canvas* is
+   deliberately a FIXED light surface, not theme-following: zombie-mermaid
+   renders diagrams with near-black text/strokes on a transparent
+   background, so on the admin's dark theme a theme-colored panel would put
+   dark diagram ink on a dark panel and wash it out. A fixed light canvas
+   keeps the diagram legible in either admin theme AND previews it on the
+   same light background it will actually render on once published.
+
+   Plain (non-module) CSS with prefixed class names, not CSS Modules — see
+   mermaid.css for why. Wire this into your Payload config's admin bundle
+   (e.g. a client component in admin.components.providers that imports this
+   file, or your own build's global CSS entry) so it loads once. */
+
+.payload-plugin-mermaid-preview-wrap {
+  margin-top: 0.5rem;
+}
+
+.payload-plugin-mermaid-preview-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--theme-elevation-600);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.payload-plugin-mermaid-preview-panel {
+  padding: 1rem;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: 4px;
+  /* Fixed light canvas — see the file header. Not var(--theme-elevation-*). */
+  background: #ffffff;
+}
+
+/* zombie-mermaid's SVG carries an intrinsic width/height; cap it to the
+   panel width and let it scale down (preserving aspect ratio) rather than
+   forcing a horizontal scroll. */
+.payload-plugin-mermaid-preview-diagram {
+  text-align: center;
+}
+
+.payload-plugin-mermaid-preview-diagram svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
+/* Non-fatal states: an empty source (nothing typed yet) or an invalid
+   diagram that zombie-mermaid rejected while the author is mid-edit. Never a
+   crash, never a leaked Mermaid error graphic. Fixed dark-on-light colors,
+   since the canvas above is a fixed light surface in either admin theme. */
+.payload-plugin-mermaid-preview-hint {
+  margin: 0;
+  color: #71717a;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.payload-plugin-mermaid-preview-invalid {
+  margin: 0;
+  color: #52525b;
+  font-size: 0.875rem;
+}
+
+.payload-plugin-mermaid-preview-source {
+  margin: 0.5rem 0 0;
+  padding: 0.75rem;
+  overflow-x: auto;
+  border-radius: 4px;
+  background: #f4f4f5;
+  color: #27272a;
+  font-family: var(
+    --font-mono,
+    ui-monospace,
+    'SF Mono',
+    Menlo,
+    Consolas,
+    monospace
+  );
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}

@@ -1,0 +1,9 @@
+# Build output
+dist/
+node_modules/
+
+# Lockfile
+pnpm-lock.yaml
+
+# Test coverage
+coverage/

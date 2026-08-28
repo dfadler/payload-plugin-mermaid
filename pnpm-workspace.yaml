@@ -1,0 +1,8 @@
+allowBuilds:
+  esbuild: true
+# zombie-mermaid is this same author's own package (dfadler/zombie-mermaid);
+# excluded from the minimum-release-age gate so a fresh release there doesn't
+# block installing here, mirroring zombie-mermaid's own pnpm-workspace.yaml
+# pattern for its own fast-moving toolchain deps.
+minimumReleaseAgeExclude:
+  - 'zombie-mermaid@1.2.0'

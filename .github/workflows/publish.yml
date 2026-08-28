@@ -1,0 +1,80 @@
+name: Release
+
+# Runs on every push to main. changesets/action inspects the repo and picks
+# one of two modes:
+#   - Pending changesets exist  -> opens/updates a "Version Packages" PR that
+#     bumps package.json + CHANGELOG.md from the pending .changeset/*.md files.
+#   - No pending changesets, but versions were just bumped (i.e. the Version
+#     PR was just merged) -> runs the publish step, which publishes to npm
+#     via trusted publishing (OIDC) and tags the release.
+#
+# Requires a one-time npmjs.com trusted-publisher link for this exact
+# repo/workflow before the publish step can succeed (see dfadler/
+# zombie-mermaid's RELEASING.md for the setup this mirrors).
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Same fork-of-this-fork guard pattern as ci.yml — see its `test` job's
+    # comment for the full reasoning. Specific to this workflow: it stops a
+    # downstream fork's own pushes from attempting an npm trusted-publish,
+    # which would fail anyway (npm's trust relationship is scoped to this
+    # exact repo/workflow and would reject an OIDC token asserting a
+    # different repo as the subject) but would still leave a stray
+    # "Version Packages" PR behind in the fork.
+    if: github.repository == 'dfadler/payload-plugin-mermaid'
+    permissions:
+      contents: write # changesets/action commits/pushes the Version PR and tags
+      pull-requests: write # changesets/action opens/updates the Version PR
+      id-token: write # required for npm trusted publishing (OIDC)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Ensure npm supports trusted publishing
+        run: npm install -g npm@latest
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Type check
+        run: pnpm run typecheck
+
+      - name: Create Version PR or publish to npm
+        id: changesets
+        uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
+        with:
+          version-script: pnpm changeset version
+          publish-script: pnpm changeset publish
+          commit-message: 'chore: version packages'
+          pr-title: 'chore: version packages'
+          create-github-releases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # No NPM_TOKEN / NODE_AUTH_TOKEN: publishing uses npm trusted
+          # publishing (OIDC), authenticated via the id-token permission
+          # above plus the trusted-publisher link configured on npmjs.com.

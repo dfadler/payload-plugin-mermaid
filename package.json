@@ -1,0 +1,100 @@
+{
+  "name": "payload-plugin-mermaid",
+  "version": "0.0.0",
+  "license": "MIT",
+  "description": "A Mermaid diagram block for Payload CMS: server-rendered SVG via zombie-mermaid, a live admin preview, and zero client-side rendering JS shipped to the frontend.",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./client": {
+      "import": {
+        "types": "./dist/client.d.ts",
+        "default": "./dist/client.js"
+      }
+    },
+    "./mermaid.css": "./dist/mermaid.css",
+    "./mermaid-preview.css": "./dist/mermaid-preview.css"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dfadler/payload-plugin-mermaid"
+  },
+  "homepage": "https://github.com/dfadler/payload-plugin-mermaid",
+  "bugs": {
+    "url": "https://github.com/dfadler/payload-plugin-mermaid/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "keywords": [
+    "payload",
+    "payloadcms",
+    "payload-plugin",
+    "mermaid",
+    "diagram",
+    "lexical",
+    "cms"
+  ],
+  "author": "Dustin Fadler",
+  "files": [
+    "dist/",
+    "LICENSE",
+    "README.md"
+  ],
+  "packageManager": "pnpm@11.13.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "clean": "rimraf dist *.tsbuildinfo",
+    "copyfiles": "mkdir -p dist && cp src/mermaid.css dist/mermaid.css && cp src/client/mermaid-preview.css dist/mermaid-preview.css",
+    "build": "pnpm run clean && tsup && pnpm run copyfiles",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
+  },
+  "peerDependencies": {
+    "payload": "^3.0.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@payloadcms/ui": "^3.0.0",
+    "zombie-mermaid": "^1.2.0"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "^1.0.0",
+    "@changesets/cli": "^3.0.1",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "payload": "^3.0.0",
+    "prettier": "^3.9.6",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "rimraf": "^5.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.68.0",
+    "vitest": "^4.1.11"
+  }
+}

@@ -1,0 +1,128 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on the same ref (e.g. repeated pushes to a PR
+# branch) instead of letting them pile up. Unlike publish.yml, CI runs have
+# no side effects worth protecting mid-flight, so cancel-in-progress is safe
+# here (see publish.yml's concurrency block for why it deliberately isn't).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # only checks out code and runs tests/lint; no writes back to the repo
+    # Guards against this workflow's jobs running (and burning Actions
+    # minutes) with unintended side effects in a downstream fork — see
+    # dfadler/zombie-mermaid's ci.yml for the full reasoning on what
+    # github.repository resolves to and what this class of guard does/
+    # doesn't protect against (short version: it stops a fork's own push/PR
+    # runs from burning that fork owner's Actions budget; it is not what
+    # protects secrets on PRs from forks — plain `pull_request:` already
+    # does that for free).
+    if: github.repository == 'dfadler/payload-plugin-mermaid'
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests with coverage
+        run: pnpm run test:coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Type check
+        run: pnpm run typecheck
+
+      - name: Format check
+        run: pnpm run format:check
+
+      - name: Build
+        run: pnpm run build
+
+  semgrep:
+    name: Semgrep SAST scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # only checks out code and runs a local scan; no SARIF upload, no writes back to the repo
+    # Same fork-of-this-fork guard as the `test` job above.
+    if: github.repository == 'dfadler/payload-plugin-mermaid'
+
+    container:
+      # Official Semgrep image; runs entirely against Semgrep's free, public
+      # rulesets (no SEMGREP_APP_TOKEN / Semgrep Cloud account required or used).
+      image: semgrep/semgrep
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Run Semgrep
+        run: semgrep scan --config auto --error
+
+  changeset:
+    name: Changeset present
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # only checks out code and runs `pnpm changeset status`; no writes back to the repo
+    # Same fork-of-this-fork guard as the `test` job above. (The additional
+    # event_name check here is unrelated to that guard — it just skips this
+    # check on push events, since a changeset is only relevant for a PR that
+    # hasn't merged yet.) The final clause exempts the changesets/action
+    # Version PR: it always modifies package.json/CHANGELOG.md while
+    # consuming (and thus never adding) a changeset, so this check would
+    # otherwise fail on every release. It's scoped to same-repo PRs (not
+    # just the branch name) so a fork can't spoof the branch name to skip
+    # its own changeset check.
+    if: >-
+      github.repository == 'dfadler/payload-plugin-mermaid' && github.event_name == 'pull_request' &&
+      !(github.head_ref == 'changeset-release/main' && github.event.pull_request.head.repo.full_name == github.repository)
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check for changeset
+        run: pnpm changeset status --since origin/main

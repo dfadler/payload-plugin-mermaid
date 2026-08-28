@@ -1,0 +1,55 @@
+/* Styles for the <Mermaid> Server Component (see Mermaid.tsx). The SVG is
+   generated on the server and injected via dangerouslySetInnerHTML with its
+   own inline sizing/colors; this file only supplies the layout the SVG
+   doesn't: block spacing, centering, and a responsive max-width so wide
+   diagrams scale down instead of overflowing.
+
+   Plain (non-module) CSS with prefixed class names, not CSS Modules: a
+   published package can't assume the consumer's bundler processes CSS
+   Modules from node_modules. Import this file once wherever your app loads
+   global CSS (e.g. a root layout). Override any of these classes from your
+   own stylesheet if your site's diagram styling needs to differ. */
+
+.payload-plugin-mermaid-figure {
+  margin: 1.5em 0;
+}
+
+.payload-plugin-mermaid-diagram {
+  /* A plain block, not a flex container: a flex item's default
+     `min-width: auto` floors it at the SVG's intrinsic width, which defeats
+     the `max-width: 100%` below and lets wide diagrams overflow on mobile.
+     Centering is handled by `margin-inline: auto` on the SVG instead. */
+  text-align: center;
+}
+
+/* zombie-mermaid's SVG carries an intrinsic width/height; cap it to the
+   content column and let it scale down (preserving aspect ratio) on narrow
+   viewports rather than forcing a horizontal scroll. */
+.payload-plugin-mermaid-diagram svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
+.payload-plugin-mermaid-caption {
+  margin-top: 0.5em;
+  text-align: center;
+  font-size: 0.875rem;
+  font-style: italic;
+  opacity: 0.75;
+}
+
+/* Shown when the server can't render the diagram (unsupported type or a
+   syntax error the renderer rejected): the raw Mermaid source, kept legible
+   rather than blank. */
+.payload-plugin-mermaid-fallback {
+  margin: 0;
+  padding: 1em;
+  overflow-x: auto;
+  border-radius: 6px;
+  background: #f4f4f4;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
