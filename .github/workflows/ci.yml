@@ -68,6 +68,13 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      # Catches a literal type (e.g. MermaidBlock.slug) silently widening in
+      # the *published* declaration file — `pnpm run typecheck` above only
+      # checks source, which doesn't cross the .d.ts emission boundary where
+      # that widening actually happens. Must run after Build.
+      - name: Type check the built declaration files
+        run: pnpm run typecheck:dist
+
   semgrep:
     name: Semgrep SAST scan
     runs-on: ubuntu-latest

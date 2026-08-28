@@ -68,6 +68,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
+    "typecheck:dist": "tsc --noEmit -p dist-typecheck/tsconfig.json",
     "prepublishOnly": "pnpm run build",
     "prepare": "pnpm run build"
   },

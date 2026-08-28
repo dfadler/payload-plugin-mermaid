@@ -12,14 +12,17 @@ import type { Block } from 'payload'
  * diagrams out without a DOM.
  *
  * A plain `satisfies Block` constant, not a factory: nothing here needs
- * per-consumer overrides today, and `satisfies` (rather than an explicit
- * `: Block` return-type annotation, which a factory would need) keeps
- * `slug` a literal type for free - a consumer keying a block registry off
- * `Block & { slug: 'mermaid' }` needs that, and a widened `slug: string`
- * would silently defeat the check.
+ * per-consumer overrides today. `slug` is `as const`, not just left to
+ * `satisfies` to narrow - `satisfies` only checks compatibility, it doesn't
+ * change the inferred type, and a *published* declaration file (`dist/
+ * index.d.ts`) serializes that inferred type: without `as const` here, the
+ * compiled .d.ts widens `slug` to plain `string` even though in-source
+ * checks (this file's own `satisfies Block`) look narrow enough. A consumer
+ * keying a block registry off `Block & { slug: 'mermaid' }` needs the
+ * *published* type to stay literal, which only `as const` guarantees.
  */
 export const MermaidBlock = {
-  slug: 'mermaid',
+  slug: 'mermaid' as const,
   interfaceName: 'MermaidBlock',
   labels: {
     singular: 'Mermaid Diagram',
