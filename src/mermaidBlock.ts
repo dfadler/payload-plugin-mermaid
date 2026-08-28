@@ -10,15 +10,27 @@ import type { Block } from 'payload'
  * Renders to finished markup at build/render time and ships no rendering JS
  * to the browser - it uses zombie-mermaid, a pure-JS renderer that lays
  * diagrams out without a DOM.
+ *
+ * `overrides` can replace `labels`, `interfaceName`, top-level `admin`, etc.,
+ * but never `slug` or `fields`: those two are placed *after* the spread so
+ * they can't be clobbered. The block's own client components
+ * (MermaidPreview, OpenInMermaidLive) assume `fields[0]` is the `diagram`
+ * field, and a consumer keying a block registry off a literal `slug` type
+ * (`Block & { slug: 'mermaid' }`, not widened to `string`) needs that
+ * literal to stay exactly `'mermaid'` — this return type keeps that literal
+ * intact through the override merge.
  */
-export function mermaidBlock(overrides?: Partial<Block>): Block {
+export function mermaidBlock(
+  overrides?: Partial<Block>,
+): Block & { slug: 'mermaid' } {
   return {
-    slug: 'mermaid',
     interfaceName: 'MermaidBlock',
     labels: {
       singular: 'Mermaid Diagram',
       plural: 'Mermaid Diagrams',
     },
+    ...overrides,
+    slug: 'mermaid',
     fields: [
       {
         name: 'diagram',
@@ -79,6 +91,5 @@ export function mermaidBlock(overrides?: Partial<Block>): Block {
         },
       },
     ],
-    ...overrides,
   }
 }
