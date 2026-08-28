@@ -68,7 +68,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm run build",
+    "prepare": "pnpm run build"
   },
   "peerDependencies": {
     "payload": "^3.0.0",
