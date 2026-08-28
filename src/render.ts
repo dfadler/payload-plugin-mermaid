@@ -4,8 +4,8 @@ import { renderMermaidSVG } from 'zombie-mermaid'
  * Server-side Mermaid render. zombie-mermaid parses the diagram to an AST and
  * lays it out with a pure-JS ELK - no browser, no jsdom, no DOM text
  * measurement. It ships nothing to the client: this is meant to run at
- * build/render time inside a Server Component, exactly like Shiki does for a
- * code-snippet block.
+ * build/render time inside a Server Component, exactly like Shiki does for
+ * a code-snippet block.
  *
  * renderMermaidSVG is synchronous (its ELK layout runs sync via a FakeWorker),
  * so a diagram becomes a self-contained <svg> string with zero async work.
@@ -42,11 +42,10 @@ function escapeAttribute(value: string): string {
 }
 
 /*
- * Stamps the original Mermaid source onto the rendered SVG as a `data-src`
- * attribute on the root `<svg>` element, so the diagram's source travels with
- * the markup that ships to the browser (e.g. for a "copy source" / "open in
- * live editor" affordance). Uses the author's source verbatim, not the
- * normalized form, so what's exposed is what was actually written.
+ * Stamps the Mermaid source onto the rendered SVG as a `data-src` attribute
+ * on the root `<svg>` element, so the diagram's source travels with the
+ * markup that ships to the browser (e.g. for a "copy source" / "open in live
+ * editor" affordance) — the same source that was actually rendered.
  *
  * The attribute is intentionally named `data-src` (renderer-agnostic) rather
  * than `data-mermaid`: if the diagram engine is ever swapped out, the
@@ -76,94 +75,6 @@ function stripRemoteFontImports(svg: string): string {
   return svg.replace(/@import\s+url\((['"]?)https?:\/\/[^)]*\1\);?/g, '')
 }
 
-/*
- * True when the diagram's header is a flowchart (`flowchart`/`graph`). Used
- * to scope the normalization below: `class`/`classDef`/`subgraph` are
- * flowchart syntax, and `class` means something entirely different in a
- * `classDiagram` (a class declaration, which zombie-mermaid *does* render),
- * so this must not touch anything but flowcharts.
- */
-function isFlowchart(source: string): boolean {
-  for (const line of source.split(/\r?\n/)) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('%%')) continue // skip blanks + comments
-    return /^(flowchart|graph)\b/.test(trimmed)
-  }
-  return false
-}
-
-/*
- * Both statements this strips come from an old-renderer idiom - invisible
- * `subgraph … [" "]` groups tinted via `classDef`/`class` - that don't render
- * cleanly either way:
- *
- * - `classDef`/`class`: zombie-mermaid *does* implement these (its
- *   predecessor, beautiful-mermaid, did not, and leaked a literal "class"
- *   node instead), so leaving them in would paint author-specified fills
- *   onto the diagram, overriding the consumer's own styling. Dropped
- *   deliberately so every diagram renders in zombie-mermaid's own theme.
- * - A blank-titled subgraph still draws as an empty titled box, so unwrap it
- *   and keep its children.
- */
-function normalizeFlowchart(source: string): string {
-  if (!isFlowchart(source)) return source
-
-  const out: string[] = []
-  /*
-   * One entry per open subgraph: true if its matching `end` should be dropped
-   * (because we dropped its blank-titled opener). This keeps nesting correct.
-   */
-  const dropMatchingEnd: boolean[] = []
-
-  for (const line of source.split(/\r?\n/)) {
-    const trimmed = line.trim()
-
-    /*
-     * Author-specified styling deliberately dropped (see above). Require
-     * whitespace after the keyword so a node id like `class-name` or
-     * `classroom` (both valid ids) isn't matched - the real statements are
-     * always `classDef <name> …` / `class <nodes> …`.
-     */
-    if (/^(classDef|class)\s/.test(trimmed)) continue
-
-    /*
-     * Match `subgraph` only as the keyword (followed by a title or end of
-     * line), not a node id like `subgraph-step`.
-     */
-    const subgraph = /^subgraph(?=\s|$)(.*)$/.exec(trimmed)
-    if (subgraph) {
-      const rest = (subgraph[1] ?? '').trim()
-      // Title forms: `subgraph title`, `subgraph id[title]`, `id["title"]`.
-      let title = rest
-      const bracketed = /\[\s*(['"]?)([\s\S]*?)\1\s*\]\s*$/.exec(rest)
-      if (bracketed) title = bracketed[2] ?? ''
-      else {
-        const quoted = /^(['"])([\s\S]*)\1$/.exec(rest)
-        if (quoted) title = quoted[2] ?? ''
-      }
-      const blank = title.trim() === ''
-      dropMatchingEnd.push(blank)
-      if (blank) continue // drop the opening line of an invisible subgraph
-    } else if (trimmed === 'end') {
-      /*
-       * A subgraph terminator is always `end` alone on its line, so match it
-       * exactly - a node id like `end-result` must not be treated as the
-       * terminator (it would unbalance the drop stack and drop a real node).
-       * (Sequence-diagram `loop … end` never reaches here; this is
-       * flowchart-only.)
-       */
-      if (dropMatchingEnd.pop()) continue
-    }
-
-    out.push(line)
-  }
-
-  return out
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-}
-
 /**
  * Renders Mermaid source to a self-contained, inline-ready SVG string, or
  * `null` when the diagram can't be rendered (unsupported diagram type or a
@@ -177,10 +88,7 @@ function normalizeFlowchart(source: string): string {
  */
 export function renderMermaid(source: string): string | null {
   try {
-    const normalized = normalizeFlowchart(source)
-    const svg = stripRemoteFontImports(
-      renderMermaidSVG(normalized, RENDER_OPTIONS),
-    )
+    const svg = stripRemoteFontImports(renderMermaidSVG(source, RENDER_OPTIONS))
     return injectSourceAttribute(svg, source)
   } catch {
     return null
