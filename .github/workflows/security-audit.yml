@@ -14,14 +14,19 @@ name: Security audit
 # Ported from dfadler/dfadler.com's security-audit.yml.
 
 on:
-  # A markdown-only diff can't change the dependency tree `pnpm audit`
-  # inspects — skip it. The weekly schedule below is untouched, so a
+  # Deliberately NOT scoped with `paths-ignore:` here — that filters at the
+  # trigger level, so a markdown-only diff would mean the workflow never
+  # runs at all. This is a required status check (branch protection), so
+  # GitHub would then wait forever for a status that's never posted,
+  # permanently blocking merge for any docs-only PR. Instead the `changes`
+  # job below computes relevance and the `audit` job's `if:` skips based on
+  # that — a *skipped* job still reports a status for its required-check
+  # context, which GitHub treats as passing. The weekly schedule always
+  # runs the full audit regardless (see `audit`'s `if:` below), so a
   # freshly-disclosed advisory is still caught even when nothing has changed.
   pull_request:
-    paths-ignore: ['**/*.md']
   push:
     branches: [main]
-    paths-ignore: ['**/*.md']
   schedule:
     # Mondays 08:00 UTC — catch advisories disclosed against an idle tree.
     - cron: '0 8 * * 1'
@@ -35,14 +40,40 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    # No diff to compute for a cron trigger — the `audit` job's `if:` below
+    # bypasses this job's output entirely on schedule.
+    if: github.repository == 'dfadler/payload-plugin-mermaid' && github.event_name != 'schedule'
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            relevant:
+              - '**'
+              - '!**/*.md'
+
   audit:
     name: pnpm audit (prod, high+)
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Same fork-of-this-fork guard as ci.yml's `test` job. The scheduled run
-    # has no github.repository ambiguity (cron only fires on this repo), but
-    # the guard is harmless there too.
-    if: github.repository == 'dfadler/payload-plugin-mermaid'
+    # `always()` so this job's `if:` is still evaluated even though
+    # `changes` above is itself conditionally skipped (on fork or on
+    # schedule) — without it, a skipped `needs` job would skip this one
+    # implicitly. Same fork-of-this-fork guard as ci.yml's `test` job,
+    # combined with: always run on the weekly schedule regardless of what
+    # changed, otherwise only run when `changes` found a non-markdown diff.
+    if: >-
+      always() && github.repository == 'dfadler/payload-plugin-mermaid' &&
+      (github.event_name == 'schedule' || needs.changes.outputs.relevant == 'true')
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0

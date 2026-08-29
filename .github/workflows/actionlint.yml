@@ -11,14 +11,18 @@ name: Actionlint
 # Ported from dfadler/dfadler.com's actionlint.yml.
 
 on:
-  # This lints .github/workflows/** — it cannot find anything in a diff that
-  # doesn't touch that directory, so scope the trigger to it rather than
-  # running on every PR regardless of what changed.
+  # Deliberately NOT scoped with `paths:` here (this lints .github/workflows/**
+  # and nothing else needs to trigger it) — a `paths:`/`paths-ignore:` filter
+  # on the *trigger* means the workflow never runs at all for a non-matching
+  # diff, and this is a required status check (branch protection), so GitHub
+  # would wait forever for a status that's never posted, permanently blocking
+  # merge for any PR that doesn't touch .github/workflows/**. Instead the
+  # `changes` job below computes relevance and the `actionlint` job's `if:`
+  # skips based on that — a *skipped* job still reports a status for its
+  # required-check context, which GitHub treats as passing.
   pull_request:
-    paths: ['.github/workflows/**']
   push:
     branches: [main]
-    paths: ['.github/workflows/**']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -33,13 +37,35 @@ env:
   SHELLCHECK_VERSION: v0.11.0
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    if: github.repository == 'dfadler/payload-plugin-mermaid'
+    outputs:
+      workflows: ${{ steps.filter.outputs.workflows }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            workflows:
+              - '.github/workflows/**'
+
   actionlint:
     name: actionlint
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Same fork-of-this-fork guard as ci.yml's `test` job — see its comment
-    # for the full reasoning.
-    if: github.repository == 'dfadler/payload-plugin-mermaid'
+    # `always()` so this job's `if:` is still evaluated (and can skip
+    # cleanly) even though `changes` above is itself conditionally skipped —
+    # without it, a skipped `needs` job would skip this one implicitly and
+    # `github.repository` guard would never get the chance to matter.
+    if: >-
+      always() && github.repository == 'dfadler/payload-plugin-mermaid' &&
+      needs.changes.outputs.workflows == 'true'
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
