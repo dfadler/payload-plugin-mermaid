@@ -1,0 +1,69 @@
+name: Security audit
+
+# Dependency vulnerability gate. Fails the build if `pnpm audit` finds a NEW
+# high- or critical-severity advisory in the production dependency tree.
+# Runs on every PR, on pushes to main, and weekly (so a freshly-disclosed
+# advisory against an unchanged tree still turns the schedule red).
+#
+# No allowlist exists yet — as of this workflow's introduction, `pnpm audit
+# --prod --audit-level=high` is clean. If a future advisory has no available
+# fix, add it to `auditConfig.ignoreGhsas` in pnpm-workspace.yaml (see
+# dfadler/dfadler.com's security-audit.yml for the pattern) rather than
+# disabling this check.
+#
+# Ported from dfadler/dfadler.com's security-audit.yml.
+
+on:
+  # A markdown-only diff can't change the dependency tree `pnpm audit`
+  # inspects — skip it. The weekly schedule below is untouched, so a
+  # freshly-disclosed advisory is still caught even when nothing has changed.
+  pull_request:
+    paths-ignore: ['**/*.md']
+  push:
+    branches: [main]
+    paths-ignore: ['**/*.md']
+  schedule:
+    # Mondays 08:00 UTC — catch advisories disclosed against an idle tree.
+    - cron: '0 8 * * 1'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: read-only; the gate only needs to check out and audit.
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: pnpm audit (prod, high+)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Same fork-of-this-fork guard as ci.yml's `test` job. The scheduled run
+    # has no github.repository ambiguity (cron only fires on this repo), but
+    # the guard is harmless there too.
+    if: github.repository == 'dfadler/payload-plugin-mermaid'
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # The job runs PR-controlled code and never needs authenticated
+          # git after checkout — don't leave the GITHUB_TOKEN in reach.
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Fails (non-zero exit) on any high/critical prod advisory not listed
+      # in pnpm-workspace.yaml `auditConfig.ignoreGhsas`.
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=high
