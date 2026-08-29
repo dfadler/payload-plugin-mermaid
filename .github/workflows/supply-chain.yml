@@ -17,14 +17,19 @@ name: Supply chain
 # Ported from dfadler/dfadler.com's supply-chain.yml.
 
 on:
-  # A markdown-only diff touches no dependency, so a cold malware-scanned
-  # install here finds nothing new — skip it rather than paying the
-  # (deliberately uncached) install cost.
+  # Deliberately NOT scoped with `paths-ignore:` here — that filters at the
+  # trigger level, so a markdown-only diff would mean the workflow never
+  # runs at all. This is a required status check (branch protection), so
+  # GitHub would then wait forever for a status that's never posted,
+  # permanently blocking merge for any docs-only PR. Instead the `changes`
+  # job below computes relevance and the `malware-scan` job's `if:` skips
+  # based on that (a markdown-only diff touches no dependency, so a
+  # cold malware-scanned install here finds nothing new) — a *skipped* job
+  # still reports a status for its required-check context, which GitHub
+  # treats as passing.
   pull_request:
-    paths-ignore: ['**/*.md']
   push:
     branches: [main]
-    paths-ignore: ['**/*.md']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -51,12 +56,36 @@ env:
   SAFE_CHAIN_MINIMUM_PACKAGE_AGE_EXCLUSIONS: zombie-mermaid
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    if: github.repository == 'dfadler/payload-plugin-mermaid'
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            relevant:
+              - '**'
+              - '!**/*.md'
+
   malware-scan:
     name: Safe Chain (pnpm install)
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Same fork-of-this-fork guard as ci.yml's `test` job.
-    if: github.repository == 'dfadler/payload-plugin-mermaid'
+    # `always()` so this job's `if:` is still evaluated even though
+    # `changes` above is itself conditionally skipped (on fork) — without
+    # it, a skipped `needs` job would skip this one implicitly. Same
+    # fork-of-this-fork guard as ci.yml's `test` job.
+    if: >-
+      always() && github.repository == 'dfadler/payload-plugin-mermaid' &&
+      needs.changes.outputs.relevant == 'true'
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
