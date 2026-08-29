@@ -1,0 +1,64 @@
+name: Docs
+
+# Checks that relative links (and #heading anchors) in tracked markdown
+# resolve. Runs in --offline mode, so external http(s) URLs are NOT checked
+# here — a flaky third-party site can't redden a PR. If external coverage is
+# ever wanted, add it as a scheduled job with the same config minus
+# --offline, never as a PR gate.
+#
+# Ported from the link-check job in dfadler/dfadler.com's link-check.yml
+# (that repo's paired commands-doc job, which regenerates a generated docs
+# file, doesn't apply here — this repo has no equivalent generator).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Least privilege: the job only needs to read the repo.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  link-check:
+    name: Markdown links resolve (incl. anchors)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Same fork-of-this-fork guard as ci.yml's `test` job.
+    if: github.repository == 'dfadler/payload-plugin-mermaid'
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # The job runs PR-controlled code and never needs authenticated
+          # git after checkout — don't leave the GITHUB_TOKEN in reach.
+          persist-credentials: false
+
+      # Third-party action pinned to a full commit SHA (not a movable tag),
+      # and the lychee binary itself pinned to an exact version, so a new
+      # release can't change behavior without a deliberate bump here — same
+      # policy as this repo's other pinned tool versions.
+      #
+      # Flags:
+      #   --offline           only file/relative links; skip external URLs (see header)
+      #   --include-fragments verify #heading anchors, not just file existence
+      #   --hidden            descend into dotdirs (.github/ holds tracked *.md)
+      #   --root-dir          resolve root-absolute links like GitHub does
+      #   --exclude-path      node_modules (deps)
+      - name: Check Markdown links with lychee
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          lycheeVersion: v0.24.2
+          args: >-
+            --offline
+            --include-fragments
+            --hidden
+            --no-progress
+            --root-dir ${{ github.workspace }}
+            --exclude-path node_modules
+            './**/*.md'
+          fail: true

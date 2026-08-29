@@ -30,8 +30,17 @@ jobs:
     # does that for free).
     if: github.repository == 'dfadler/payload-plugin-mermaid'
 
+    env:
+      # Pinned to an exact release, same discipline as the other pinned tool
+      # versions in this workflow. Bump deliberately.
+      DIFF_COVER_VERSION: 10.5.1
+
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # diff-cover diffs the PR against its base branch, so it needs full
+          # history for both — a shallow clone has no merge-base to diff from.
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
@@ -55,6 +64,36 @@ jobs:
           name: coverage-report
           path: coverage/
           retention-days: 14
+
+      # pipx installs into its own venv, but the wheel download still goes
+      # through pip's cache dir underneath — caching it keyed on
+      # DIFF_COVER_VERSION skips the download on every PR run instead of only
+      # within a single job.
+      - name: Cache pip packages (diff-cover)
+        if: github.event_name == 'pull_request'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/pip
+          key: pip-diffcover-${{ runner.os }}-${{ env.DIFF_COVER_VERSION }}
+
+      # Patch coverage gate: fails the PR if its new/changed lines are under
+      # 90% covered. Whole-project coverage stays informational (the artifact
+      # above) rather than gated, so this can be adopted without first
+      # backfilling coverage on existing code.
+      - name: Enforce 90% patch coverage
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          pipx install "diff-cover==${DIFF_COVER_VERSION}"
+          diff-cover coverage/lcov.info \
+            --compare-branch="origin/$BASE_REF" \
+            --fail-under=90 \
+            --markdown-report=diff-cover.md
+
+      - name: Publish patch-coverage summary
+        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+        run: cat diff-cover.md >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Lint
         run: pnpm run lint

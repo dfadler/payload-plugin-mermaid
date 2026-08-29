@@ -1,0 +1,71 @@
+name: Actionlint
+
+# Lints the workflow YAML under .github/workflows/ itself — the one layer no
+# job-level check can cover, because an invalid workflow file is rejected by
+# GitHub before any job starts. actionlint also catches expression/type
+# mistakes in ${{ }}, bad cron/glob syntax, unknown runner labels, and (via
+# shellcheck) bugs in embedded `run:` scripts.
+#
+# Tools are pinned to exact versions so a new actionlint or shellcheck release
+# adding a check can't turn a green main red without a deliberate bump here.
+# Ported from dfadler/dfadler.com's actionlint.yml.
+
+on:
+  # This lints .github/workflows/** — it cannot find anything in a diff that
+  # doesn't touch that directory, so scope the trigger to it rather than
+  # running on every PR regardless of what changed.
+  pull_request:
+    paths: ['.github/workflows/**']
+  push:
+    branches: [main]
+    paths: ['.github/workflows/**']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: the job only needs to read the repo.
+permissions:
+  contents: read
+
+env:
+  ACTIONLINT_VERSION: 1.7.12
+  SHELLCHECK_VERSION: v0.11.0
+
+jobs:
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Same fork-of-this-fork guard as ci.yml's `test` job — see its comment
+    # for the full reasoning.
+    if: github.repository == 'dfadler/payload-plugin-mermaid'
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # The job runs a downloaded binary against PR-controlled files and
+          # never needs authenticated git — don't leave the GITHUB_TOKEN in
+          # reach.
+          persist-credentials: false
+
+      # Pinned binary from upstream releases (first-party download only, to
+      # match this repo's action set).
+      - name: Install actionlint ${{ env.ACTIONLINT_VERSION }}
+        run: |
+          curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz actionlint
+          sudo install -m 0755 actionlint /usr/local/bin/actionlint
+          rm -f actionlint
+          actionlint --version
+
+      - name: Install shellcheck ${{ env.SHELLCHECK_VERSION }}
+        run: |
+          curl -fsSL "https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK_VERSION}/shellcheck-${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" \
+            | tar -xJ
+          sudo install -m 0755 "shellcheck-${SHELLCHECK_VERSION}/shellcheck" /usr/local/bin/shellcheck
+          rm -rf "shellcheck-${SHELLCHECK_VERSION}"
+          shellcheck --version
+
+      - name: Lint workflows (actionlint)
+        run: actionlint
