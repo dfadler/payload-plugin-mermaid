@@ -1,6 +1,6 @@
 {
   "name": "payload-plugin-mermaid",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "license": "MIT",
   "description": "A Mermaid diagram block for Payload CMS: server-rendered SVG via zombie-mermaid, a live admin preview, and zero client-side rendering JS shipped to the frontend.",
   "type": "module",
