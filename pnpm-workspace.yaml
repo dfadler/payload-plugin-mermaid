@@ -6,3 +6,18 @@ allowBuilds:
 # pattern for its own fast-moving toolchain deps.
 minimumReleaseAgeExclude:
   - 'zombie-mermaid@1.2.0'
+# dompurify is a transitive dep via @payloadcms/ui -> @monaco-editor/react ->
+# monaco-editor, several patch versions behind. All 4 open Dependabot alerts
+# (GHSA-covered XSS/config-pollution issues) are fixed by 3.4.13; forced here
+# since upstream hasn't bumped its pin yet. Patch-only bump within the same
+# minor line monaco-editor already ships, so no compatibility risk expected.
+#
+# esbuild is dev-tooling only (tsup/vitest/vite/tsx, all devDependencies —
+# never installed for a consumer of this package), pulled in below the
+# patched version by tsup's own `^0.27.0` pin. Forced to the patched line
+# despite that pin because esbuild 0.28.x built and ran clean here (build,
+# typecheck, lint, full test suite) — re-verify the same way before bumping
+# further if tsup's pin ever tightens.
+overrides:
+  dompurify: '^3.4.13'
+  esbuild: '^0.28.1'
