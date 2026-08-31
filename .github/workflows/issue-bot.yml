@@ -1,6 +1,6 @@
 name: issue-bot
 
-# Files a standalone issue from a PR comment that mentions @dfadler-issue-bot
+# Files a standalone issue from a PR comment that mentions @issue-bot
 # (review comment on a diff line, or a general PR conversation comment).
 # No AI involved — deterministic mention match, dedup by thread-root backlink.
 #
@@ -22,4 +22,4 @@ jobs:
     steps:
       # Pinned to the v1 tag's commit (not @v1/@main, which are mutable) —
       # same third-party-action policy as this repo's other workflows.
-      - uses: dfadler/issue-bot@5614f3df69733585572920ee64e5d0482679f9e6 # v1
+      - uses: dfadler/issue-bot@ba4d0d83ec03843a39795cf8660e13334cfc1788 # v1
