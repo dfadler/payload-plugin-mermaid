@@ -16,8 +16,8 @@ importers:
         specifier: ^3.0.0
         version: 3.88.0(@types/react@19.2.18)(monaco-editor@0.56.0)(next@16.3.3(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(payload@3.88.0(graphql@16.14.2)(typescript@5.9.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
       zombie-mermaid:
-        specifier: ^1.2.0
-        version: 1.2.0
+        specifier: ^1.5.0
+        version: 1.5.0
     devDependencies:
       '@changesets/changelog-github':
         specifier: ^1.0.0
@@ -2592,8 +2592,8 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  zombie-mermaid@1.2.0:
-    resolution: {integrity: sha512-IoWYk835mDnf5Zrw993qYJzFdnB+JqsD9ibDnPCIcf0lmAw8UoXY9pj+FvEo3fQj4WEoS13GoA7VcYP//4wBNw==}
+  zombie-mermaid@1.5.0:
+    resolution: {integrity: sha512-h5o5jOsQMp6YzNXoKp8jfIkRewcs+oCWmhHD8sFq7HFbAZquoIGmD3h8bHmw0vVCnP0GPr8iGXKdTxFDq4D2yA==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -4939,7 +4939,7 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zombie-mermaid@1.2.0:
+  zombie-mermaid@1.5.0:
     dependencies:
       elkjs: 0.11.1
       entities: 7.0.1
