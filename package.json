@@ -79,7 +79,7 @@
   },
   "dependencies": {
     "@payloadcms/ui": "^3.0.0",
-    "zombie-mermaid": "^1.5.0"
+    "zombie-mermaid": "^1.6.0"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^1.0.0",
