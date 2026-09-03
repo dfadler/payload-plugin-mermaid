@@ -1,5 +1,11 @@
 # payload-plugin-mermaid
 
+## 1.0.2
+
+### Patch Changes
+
+- [#10](https://github.com/dfadler/payload-plugin-mermaid/pull/10) [`8db037d`](https://github.com/dfadler/payload-plugin-mermaid/commit/8db037dea09693a14e64c9bea2876c2d06f238a1) Thanks [@dfadler](https://github.com/dfadler)! - Widen the `zombie-mermaid` dependency range from `^1.5.0` to `^1.6.0`. No API changes needed on this side — this package doesn't set `RenderOptions.interactivity` (it relies on the library default), so the 1.6.0 tightening of what `'static'`/`'none'` strip doesn't change this package's rendered output. Verified: full test suite, typecheck (including the built `.d.ts`), lint, and build all pass against 1.6.0.
+
 ## 1.0.1
 
 ### Patch Changes
