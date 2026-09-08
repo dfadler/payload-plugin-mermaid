@@ -43,6 +43,13 @@ See `package.json` for the full list.
 - `pnpm run format` — format the codebase with Prettier
 - `pnpm run format:check` — check formatting without writing changes
 
+## Automated review
+
+Pull requests get an automated first-pass review from
+[CodeRabbit](https://coderabbit.ai), configured in `.coderabbit.yaml`. It
+supplements — it doesn't replace — the lint, type-check, test, and coverage
+checks CI already runs.
+
 ## Before opening a PR
 
 - CI requires: tests + coverage gate, lint, type check, format check, build, a

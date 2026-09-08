@@ -1,0 +1,72 @@
+# CodeRabbit configuration — https://docs.coderabbit.ai/reference/configuration
+# Requires the CodeRabbit GitHub App to be installed on this repo
+# (https://github.com/apps/coderabbitai) before it takes effect.
+
+language: 'en-US'
+
+tone_instructions: >-
+  Be terse and specific. Point at the exact file/line and the concrete
+  failure scenario instead of general observations. Skip praise and
+  restating what the diff already makes obvious.
+
+reviews:
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    drafts: false
+
+  path_filters:
+    - '!dist/**'
+    - '!dist-typecheck/**'
+    - '!coverage/**'
+    - '!node_modules/**'
+    - '!pnpm-lock.yaml'
+
+  path_instructions:
+    - path: 'src/render.ts'
+      instructions: |
+        This renders Mermaid to SVG server-side via zombie-mermaid, at
+        build/request time on every site that consumes this plugin — an
+        unhandled error or unbounded/slow render here fails or stalls a
+        real page render for a consumer, not just a test. Flag missing
+        error handling around the render call and any change that could
+        make an unsupported diagram type throw instead of falling back to
+        showing the raw source (per the README's documented fallback
+        behavior for gantt/pie/journey/gitgraph/mindmap).
+
+    - path: 'src/client/**/*.tsx'
+      instructions: |
+        These are client components for the Payload admin editor (the live
+        debounced preview and "Open in Mermaid Live Editor" button) — they
+        run in the browser, not on the server render path. Flag any import
+        that pulls in server-only or Node-only code, and check that
+        debounce/async logic here can't leave a stale preview showing after
+        rapid edits or an unmount.
+
+    - path: 'package.json'
+      instructions: |
+        `payload`, `react`, and `react-dom` are declared as peer
+        dependency *ranges*, and `@payloadcms/ui` as a regular range
+        dependency — a deliberate choice documented in the README's "Why
+        not pin `payload`, or inject the hooks?" section, following the
+        convention of Payload's own official plugin template rather than
+        the exact-version peer pinning some first-party Payload packages
+        use. Flag a change that pins these to an exact version or
+        reintroduces dependency injection for `useField`/`useFormFields`
+        as contradicting that documented decision, not as a stylistic nit.
+
+    - path: 'src/**/*.ts'
+      instructions: |
+        A user-facing change under src/ (new/changed public behavior, not a
+        pure test or internal refactor) should come with a changeset
+        (`.changeset/*.md`, added via `pnpm changeset`) per CONTRIBUTING.md
+        — flag its absence when the diff looks user-facing.
+
+  tools:
+    github-checks:
+      timeout_ms: 300000
