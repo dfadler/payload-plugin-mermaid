@@ -20,7 +20,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
-    "baseUrl": ".",
     "paths": {
       "payload-plugin-mermaid": ["./src/index.ts"],
       "payload-plugin-mermaid/*": ["./src/*"]
