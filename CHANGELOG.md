@@ -1,5 +1,15 @@
 # payload-plugin-mermaid
 
+## 1.0.4
+
+### Patch Changes
+
+- [#25](https://github.com/dfadler/payload-plugin-mermaid/pull/25) [`2c2da53`](https://github.com/dfadler/payload-plugin-mermaid/commit/2c2da53d9de94e9193e851b1fb024f424c5f950b) Thanks [@dependabot](https://github.com/apps/dependabot)! - Bump the `typescript` devDependency from `5.9.3` to `7.0.2`. Purely a build-tooling upgrade — no source changes. Verified: full test suite, typecheck (source and the built `.d.ts`), lint, format check, and a from-scratch `pnpm install` (which triggers the `prepare`/build hook) all pass against TypeScript 7.0.2 with `tsdown`. `pnpm audit --prod --audit-level=high` shows no new findings beyond the pre-existing baseline.
+
+- [#28](https://github.com/dfadler/payload-plugin-mermaid/pull/28) [`d8fda1d`](https://github.com/dfadler/payload-plugin-mermaid/commit/d8fda1db286064f616b5924b3c770fd186d798d1) Thanks [@dfadler](https://github.com/dfadler)! - Switch the build tool from `tsup` to `tsdown` (rolldown-based). No public API changes — `dist/index.js`, `dist/index.d.ts`, `dist/client.js`, and `dist/client.d.ts` keep the same names and content shape, and the `'use client'` directive is still hoisted to the top of `dist/client.js`. Declaration files now also ship `.d.ts.map` sourcemaps, which tsup didn't generate.
+
+  This is prep work: `tsup@8.5.1` bundles a `rollup-plugin-dts@6.1.1` build that can't generate declarations under TypeScript 7 (its Node API surface changed). `tsdown` shells out to the TypeScript compiler directly rather than using its removed API, so it works under both the current TypeScript 5.9.3 and TypeScript 7. Verified: full test suite, typecheck (source and the built `.d.ts` via `dist-typecheck/`), lint, and build all pass; `pnpm audit --prod --audit-level=high` shows no new findings beyond the pre-existing baseline.
+
 ## 1.0.3
 
 ### Patch Changes
