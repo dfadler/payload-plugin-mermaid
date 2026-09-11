@@ -38,7 +38,7 @@ See `package.json` for the full list.
 - `pnpm run test:watch` — Vitest in watch mode
 - `pnpm run test:coverage` — Vitest with coverage
 - `pnpm run lint` — oxlint
-- `pnpm run build` — build the publishable package with tsup
+- `pnpm run build` — build the publishable package with tsdown
 - `pnpm run typecheck` — type-check source
 - `pnpm run format` — format the codebase with Prettier
 - `pnpm run format:check` — check formatting without writing changes

@@ -2,7 +2,7 @@
 
 /*
  * MermaidPreview.tsx and OpenInMermaidLive.tsx each declare their own 'use
- * client' too, but tsup bundles this entry and its imports into one output
+ * client' too, but tsdown bundles this entry and its imports into one output
  * file — a directive on an individual source file doesn't propagate to the
  * top of the bundled chunk, and without one there Next.js's RSC boundary
  * treats the whole bundle as a Server Component, which breaks `useField`/

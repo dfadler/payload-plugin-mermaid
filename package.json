@@ -52,14 +52,14 @@
     "LICENSE",
     "README.md"
   ],
-  "packageManager": "pnpm@11.13.0",
+  "packageManager": "pnpm@11.13.1",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
     "clean": "rimraf dist *.tsbuildinfo",
     "copyfiles": "mkdir -p dist && cp src/mermaid.css dist/mermaid.css && cp src/client/mermaid-preview.css dist/mermaid-preview.css",
-    "build": "pnpm run clean && tsup && pnpm run copyfiles",
+    "build": "pnpm run clean && tsdown && pnpm run copyfiles",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -93,7 +93,7 @@
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "rimraf": "^6.1.3",
-    "tsup": "^8.5.1",
+    "tsdown": "^0.23.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   }
