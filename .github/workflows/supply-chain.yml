@@ -51,9 +51,14 @@ env:
   # own maintainer publishes: zombie-mermaid (this same author's own package,
   # see pnpm-workspace.yaml's minimumReleaseAgeExclude) ships fresh releases
   # this repo consumes immediately, so there's no unknown-publisher window
-  # to wait out. Comma-separated exact package names (or a trailing
-  # "@scope/*" to trust a whole org).
-  SAFE_CHAIN_MINIMUM_PACKAGE_AGE_EXCLUSIONS: zombie-mermaid
+  # to wait out. `@zombie-mermaid/*` covers the five internal packages
+  # zombie-mermaid#622 externalized as real dependencies (core,
+  # mermaid-parser, svg-renderer, ascii-renderer, mcp) — every zombie-mermaid
+  # release now publishes fresh versions of these in lockstep (changesets'
+  # `fixed` group), so this needs to be a scope-wide trust, not a one-off
+  # per-version exclusion. Comma-separated exact package names (or a
+  # trailing "@scope/*" to trust a whole org).
+  SAFE_CHAIN_MINIMUM_PACKAGE_AGE_EXCLUSIONS: zombie-mermaid,@zombie-mermaid/*
 
 jobs:
   changes:
