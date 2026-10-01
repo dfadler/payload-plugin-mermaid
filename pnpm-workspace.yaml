@@ -26,3 +26,9 @@ minimumReleaseAgeExclude:
 overrides:
   dompurify: '^3.4.13'
   esbuild: '^0.28.1'
+  # Advisories on transitive deps via @payloadcms/ui -> payload / next, fixed in
+  # patch/minor releases within each package's current major line; forced here
+  # since upstream hasn't bumped its pins yet (pnpm audit --prod, high+).
+  next: '16.3.6'
+  fast-uri: '^3.1.7'
+  undici: '^7.29.1'
