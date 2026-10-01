@@ -59,6 +59,9 @@ jobs:
             relevant:
               - '**'
               - '!**/*.md'
+              # issue-bot is a standalone workflow with no dependency-tree
+              # impact; bumping it can't introduce a new advisory.
+              - '!.github/workflows/issue-bot.yml'
 
   audit:
     name: pnpm audit (prod, high+)
