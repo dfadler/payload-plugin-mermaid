@@ -10,8 +10,8 @@ a pure-JS renderer with no DOM dependency, so rendering happens at
 build/request time on the server, the same way you'd render a syntax-highlighted
 code block.
 
-Supported diagram types: flowchart, sequence, class, state, ER, and xychart
-(zombie-mermaid lays these out with dagre; gantt, pie, journey, gitgraph, and
+Supported diagram types: flowchart, sequence, class, state, ER, xychart, and
+pie (zombie-mermaid lays these out with dagre; gantt, journey, gitgraph, and
 mindmap diagrams aren't supported and fall back to showing the raw source).
 
 ## Install

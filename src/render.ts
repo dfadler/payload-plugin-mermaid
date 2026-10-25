@@ -81,8 +81,8 @@ function stripRemoteFontImports(svg: string): string {
  * syntax error that makes zombie-mermaid throw). Callers should fall back to
  * showing the raw source.
  *
- * Supported diagram types: flowchart, sequence, class, state, ER, and
- * xychart. Others (gantt, pie, journey, gitgraph, mindmap, ...) throw and
+ * Supported diagram types: flowchart, sequence, class, state, ER, xychart,
+ * and pie. Others (gantt, journey, gitgraph, mindmap, ...) throw and
  * thus fall back - zombie-mermaid lays diagrams out with dagre, not ELK, so
  * this is scoped to dagre-safe diagram types.
  */
